@@ -2,8 +2,9 @@ import React from 'react';
 import { withGoogleMap, GoogleMap, withScriptjs, InfoWindow, Marker } from "react-google-maps";
 import Geocode from "react-geocode";
 import Autocomplete from 'react-google-autocomplete';
+import { Descriptions } from 'antd';
 
-Geocode.setApiKey("AIzaSyCUQDODLWo4GwqkGZUpCUqYNdMHa--TLCk");
+Geocode.setApiKey("AIzaSyALVjLwOIM1gf7EzdJJVmWLKdLP-yZGTcw");
 Geocode.enableDebug();
 
 class LocationSearchModal extends React.Component {
@@ -33,40 +34,53 @@ class LocationSearchModal extends React.Component {
     }
 
     componentDidMount() {
-        Geocode.fromLatLng(-34.397, 150.644).then(
-            response => {
-                console.log(response)
-                const address = response.results[0].formatted_address,
-                    addressArray = response.results[0].address_components,
-                    city = this.getCity(addressArray),
-                    area = this.getArea(addressArray),
-                    state = this.getState(addressArray);
-
-                console.log('city', city, area, state);
-
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(position => {
                 this.setState({
-                    address: (address) ? address : '',
-                    area: (area) ? area : '',
-                    city: (city) ? city : '',
-                    state: (state) ? state : '',
-                })
-            },
-            error => {
-                console.error(error);
-            }
-        );
+                    center: {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    },
+                },
+                    () => {
+                        Geocode.fromLatLng(position.coords.latitude, position.coords.longitude).then(
+                            response => {
+                                console.log(response)
+                                const address = response.results[0].formatted_address,
+                                    addressArray = response.results[0].address_components,
+                                    city = this.getCity(addressArray),
+                                    area = this.getArea(addressArray),
+                                    state = this.getState(addressArray);
+                                console.log('city', city, area, state);
+                                this.setState({
+                                    address: (address) ? address : '',
+                                    area: (area) ? area : '',
+                                    city: (city) ? city : '',
+                                    state: (state) ? state : '',
+                                })
+                            },
+                            error => {
+                                console.error(error);
+                            }
+                        );
+
+                    })
+            });
+        } else {
+            console.error("Geolocation is not supported by this browser!");
+        }
     };
 
     // shouldComponentUpdate(nextProps, nextState, nextContext) {
     //     if (
-    //         this.state.markerPosition.lat !== this.props.center.lat ||
+    //         this.state.markerPosition.lat !== this.state.center.lat ||
     //         this.state.address !== nextState.address ||
     //         this.state.city !== nextState.city ||
     //         this.state.area !== nextState.area ||
     //         this.state.state !== nextState.state
     //     ) {
     //         return true
-    //     } else if (this.props.center.lat === nextProps.center.lat) {
+    //     } else if (this.state.center.lat === nextProps.center.lat) {
     //         return false
     //     }
     // }
@@ -171,27 +185,39 @@ class LocationSearchModal extends React.Component {
         })
     };
 
+    // const AsyncMap = compose(
+    //     withProps({
+    //         googleMapURL: "https://maps.googleapis.com/maps/api/js?key=AIzaSyALVjLwOIM1gf7EzdJJVmWLKdLP-yZGTcw&v=3.exp&libraries=geometry,drawing,places",
+    //         loadingElement: <div style={{ height: `100%` }} />,
+    //         containerElement: <div style={{ height: `400px` }} />,
+    //         mapElement: <div style={{ height: `100%` }} />,
+    //     }),
+    //     withScriptjs,
+    //     withGoogleMap
+    // )((props) =>
+    //     <GoogleMap
+
     render() {
         const AsyncMap = withScriptjs(
             withGoogleMap(
                 props => (
                     <GoogleMap
-                        // google={this.props.google}
+                        google={this.props.google}
                         defaultZoom={this.state.zoom}
                         defaultCenter={{ lat: this.state.mapPosition.lat, lng: this.state.mapPosition.lng }}
                     >
                         {/* InfoWindow on top of marker */}
-                        {/* <InfoWindow
+                        <InfoWindow
                             onClose={this.onInfoWindowClose}
                             position={{ lat: (this.state.markerPosition.lat + 0.0018), lng: this.state.markerPosition.lng }}
                         >
                             <div>
                                 <span style={{ padding: 0, margin: 0 }}>{this.state.address}</span>
                             </div>
-                        </InfoWindow> */}
+                        </InfoWindow>
                         {/*Marker*/}
                         <Marker
-                            // google={this.props.google}
+                            google={this.props.google}
                             name={'Dolores park'}
                             draggable={true}
                             onDragEnd={this.onMarkerDragEnd}
@@ -205,7 +231,7 @@ class LocationSearchModal extends React.Component {
                                 height: '40px',
                                 paddingLeft: '16px',
                                 marginTop: '2px',
-                                marginBottom: '500px'
+                                marginBottom: '2rem'
                             }}
                             onPlaceSelected={this.onPlaceSelected}
                             types={['(regions)']}
@@ -214,30 +240,18 @@ class LocationSearchModal extends React.Component {
                 )
             )
         );
-        let map;
-        if (this.state.center.lat !== undefined) {
-            map = <div>
-                <div>
-                    <div className="form-group">
-                        <label htmlFor="">City</label>
-                        <input type="text" name="city" className="form-control" onChange={this.onChange} readOnly="readOnly" value={this.state.city} />
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="">Area</label>
-                        <input type="text" name="area" className="form-control" onChange={this.onChange} readOnly="readOnly" value={this.state.area} />
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="">State</label>
-                        <input type="text" name="state" className="form-control" onChange={this.onChange} readOnly="readOnly" value={this.state.state} />
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="">Address</label>
-                        <input type="text" name="address" className="form-control" onChange={this.onChange} readOnly="readOnly" value={this.state.address} />
-                    </div>
-                </div>
+
+        return (
+            <div style={{ padding: '1rem', margin: '0 auto' }}>
+                <Descriptions title="MAP" bordered>
+                    <Descriptions.Item label="City">{this.state.city}</Descriptions.Item>
+                    <Descriptions.Item label="Area">{this.state.area}</Descriptions.Item>
+                    <Descriptions.Item label="State">{this.state.state}</Descriptions.Item>
+                    <Descriptions.Item label="Address">{this.state.address}</Descriptions.Item>
+                </Descriptions>
 
                 <AsyncMap
-                    googleMapURL="https://maps.googleapis.com/maps/api/js?key=KEY_INPUT&libraries=places"
+                    googleMapURL="https://maps.googleapis.com/maps/api/js?key=AIzaSyALVjLwOIM1gf7EzdJJVmWLKdLP-yZGTcw&libraries=places"
                     loadingElement={
                         <div style={{ height: `100%` }} />
                     }
@@ -249,10 +263,7 @@ class LocationSearchModal extends React.Component {
                     }
                 />
             </div>
-        } else {
-            map = <div style={{ height: this.state.height }} />
-        }
-        return (map)
+        )
     }
 
 }
