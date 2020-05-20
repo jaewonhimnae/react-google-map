@@ -4,43 +4,44 @@ import Geocode from "react-geocode";
 import Autocomplete from 'react-google-autocomplete';
 import { Descriptions } from 'antd';
 
+const { MarkerWithLabel } = require("react-google-maps/lib/components/addons/MarkerWithLabel");
+
+
 Geocode.setApiKey("AIzaSyALVjLwOIM1gf7EzdJJVmWLKdLP-yZGTcw");
 Geocode.enableDebug();
 
 class LocationSearchModal extends React.Component {
 
-    constructor(props) {
-        super(props);
-        this.state = {
-            address: '',
-            city: '',
-            area: '',
-            state: '',
-            zoom: 15,
-            height: 400,
-            mapPosition: {
-                lat: 0,
-                lng: 0,
-            },
-            markerPosition: {
-                lat: 0,
-                lng: 0,
-            },
-            center: {
-                lat: 18.5204,
-                lng: 73.8567
-            }
+    state = {
+        address: '',
+        city: '',
+        area: '',
+        state: '',
+        zoom: 15,
+        height: 400,
+        mapPosition: {
+            lat: 0,
+            lng: 0,
+        },
+        markerPosition: {
+            lat: 0,
+            lng: 0,
         }
     }
+
 
     componentDidMount() {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(position => {
                 this.setState({
-                    center: {
+                    mapPosition: {
                         lat: position.coords.latitude,
-                        lng: position.coords.longitude
+                        lng: position.coords.longitude,
                     },
+                    markerPosition: {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                    }
                 },
                     () => {
                         Geocode.fromLatLng(position.coords.latitude, position.coords.longitude).then(
@@ -80,7 +81,7 @@ class LocationSearchModal extends React.Component {
     //         this.state.state !== nextState.state
     //     ) {
     //         return true
-    //     } else if (this.state.center.lat === nextProps.center.lat) {
+    //     } else if (this.state.mapPosition.lat === nextState.mapPosition.lat) {
     //         return false
     //     }
     // }
@@ -168,6 +169,10 @@ class LocationSearchModal extends React.Component {
             state = this.getState(addressArray),
             latValue = place.geometry.location.lat(),
             lngValue = place.geometry.location.lng();
+
+        console.log('latvalue', latValue)
+        console.log('lngValue', lngValue)
+
         // Set these values in the state.
         this.setState({
             address: (address) ? address : '',
@@ -202,19 +207,11 @@ class LocationSearchModal extends React.Component {
             withGoogleMap(
                 props => (
                     <GoogleMap
-                        google={this.props.google}
                         defaultZoom={this.state.zoom}
                         defaultCenter={{ lat: this.state.mapPosition.lat, lng: this.state.mapPosition.lng }}
                     >
                         {/* InfoWindow on top of marker */}
-                        <InfoWindow
-                            onClose={this.onInfoWindowClose}
-                            position={{ lat: (this.state.markerPosition.lat + 0.0018), lng: this.state.markerPosition.lng }}
-                        >
-                            <div>
-                                <span style={{ padding: 0, margin: 0 }}>{this.state.address}</span>
-                            </div>
-                        </InfoWindow>
+
                         {/*Marker*/}
                         <Marker
                             google={this.props.google}
@@ -223,7 +220,25 @@ class LocationSearchModal extends React.Component {
                             onDragEnd={this.onMarkerDragEnd}
                             position={{ lat: this.state.markerPosition.lat, lng: this.state.markerPosition.lng }}
                         />
+                        <InfoWindow
+                            onClose={this.onInfoWindowClose}
+                            position={{ lat: (this.state.markerPosition.lat + 0.0018), lng: this.state.markerPosition.lng }}
+                        >
+                            <div>
+                                <span style={{ padding: 0, margin: 0 }}>{this.state.address}</span>
+                            </div>
+                        </InfoWindow>
                         <Marker />
+
+                        {/* <MarkerWithLabel
+                            position={{ lat: -34.397, lng: 150.644 }}
+                            labelAnchor={new google.maps.Point(0, 0)}
+                            labelStyle={{ backgroundColor: "yellow", fontSize: "32px", padding: "16px" }}
+                        >
+                            <div>Hello There!</div>
+                        </MarkerWithLabel> */}
+
+
                         {/* For Auto complete Search Box */}
                         <Autocomplete
                             style={{
@@ -242,8 +257,9 @@ class LocationSearchModal extends React.Component {
         );
 
         return (
-            <div style={{ padding: '1rem', margin: '0 auto' }}>
-                <Descriptions title="MAP" bordered>
+            <div style={{ padding: '1rem', margin: '0 auto', maxWidth: 1000 }}>
+                <h1>Google Map Basic</h1>
+                <Descriptions bordered>
                     <Descriptions.Item label="City">{this.state.city}</Descriptions.Item>
                     <Descriptions.Item label="Area">{this.state.area}</Descriptions.Item>
                     <Descriptions.Item label="State">{this.state.state}</Descriptions.Item>
